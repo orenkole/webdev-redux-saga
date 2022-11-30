@@ -38,3 +38,87 @@ const reducer = combineReducers(({
 
 export default reducer;
 ```
+
+## 3. Интеграция Redux (Redux Integration)
+
+_webdev-redux-saga/src/redux/constants.js_
+```js
+export const INCREASE_COUNT = 'INCREASE_COUNT';
+export const DECREASE_COUNT = 'DECREASE_COUNT';
+```
+
+_webdev-redux-saga/src/redux/actions/actionCreators.js_
+```js
+import {DECREASE_COUNT, INCREASE_COUNT} from "../constants";
+
+export const increaseCount = () => ({
+  type: INCREASE_COUNT
+})
+
+export const decreaseCount = () => ({
+  type: DECREASE_COUNT
+})
+```
+_webdev-redux-saga/src/redux/reducers/counter.js_
+```js
+import {DECREASE_COUNT, INCREASE_COUNT} from "../constants";
+
+export const counter = (state = {count: 0}, {type}) => {
+  switch(type) {
+    case INCREASE_COUNT:
+      return {
+        ...state,
+        count: state.count + 1
+      }
+    case DECREASE_COUNT:
+      return {
+        ...state,
+        count: state.count - 1
+      }
+    default:
+      return state
+  }
+}
+```
+
+_webdev-redux-saga/src/redux/reducers/index.js_
+```js
+import {combineReducers} from "redux";
+import {counter} from "./counter";
+
+const reducer = combineReducers({
+  counter
+})
+
+export default reducer;
+```
+_webdev-redux-saga/src/App.js_
+```js
+import logo from './logo.svg';
+import './App.css';
+import {useDispatch, useSelector} from "react-redux";
+import {decreaseCount, increaseCount} from "./redux/actions/actionCreators";
+
+function App() {
+  const dispatch = useDispatch();
+  const count = useSelector(state => state?.counter?.count)
+
+  const handleIncrease = () => {
+    dispatch(increaseCount())
+  }
+
+  const handleDecrease = () => {
+    dispatch(decreaseCount())
+  }
+
+  return (
+    <div>
+      <button onClick={handleDecrease}>-1</button>
+      <span>{count}</span>
+      <button onClick={handleIncrease}>+1</button>
+    </div>
+  );
+}
+
+export default App;
+```
