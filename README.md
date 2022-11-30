@@ -122,3 +122,85 @@ function App() {
 
 export default App;
 ```
+
+## 4. Интеграция Redux-Saga (Redux-Saga Integration)
+
+NOTE:  
+
+_webdev-redux-saga/src/redux/store.js_
+```js
+const configureStore = preloadedState => createStore(
+  reducer,
+  preloadedState,
+  composeEnhancers(applyMiddleware(sagaMiddleware))
+)
+
+const store = configureStore({});
+
+sagaMiddleware.run(rootSaga); // run only after applyMiddleware
+```
+
+workerSaga - for async work
+watcherSaga - watch for actions dispatch
+
+_webdev-redux-saga/src/redux/sagas/index.js_
+```js
+export function* watchClickSaga() {
+  yield take(INCREASE_COUNT);
+  console.log('increase')
+  yield take(DECREASE_COUNT);
+  console.log('decrease')
+}
+```
+
+We will not see 'decrease' until we don't dispatch INCREASE_COUNT, only after that we will be able to watch DECREASE_COUNT
+
+---
+
+_webdev-redux-saga/src/redux/store.js_
+```js
+import {createStore, compose, applyMiddleware} from "redux";
+import createSagaMiddleware from 'redux-saga';
+import reducer from "./reducers";
+import rootSaga from "./sagas";
+
+const sagaMiddleware = createSagaMiddleware(); // create saga middleware
+
+const composeEnhancers =
+  typeof window === 'object' &&
+  window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ ?
+    window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__({}) : compose;
+
+const configureStore = preloadedState => createStore(
+  reducer,
+  preloadedState,
+  composeEnhancers(applyMiddleware(sagaMiddleware)) // apply saga middleware
+)
+
+const store = configureStore({});
+
+sagaMiddleware.run(rootSaga); // run root saga
+
+export default store;
+```
+
+_webdev-redux-saga/src/redux/sagas/index.js_
+```js
+import {take} from "redux-saga/effects";
+import {DECREASE_COUNT, INCREASE_COUNT} from "../constants";
+
+export function* workSaga() {
+
+}
+
+export function* watchClickSaga() {
+  yield take(INCREASE_COUNT);
+  console.log('increase')
+  yield take(DECREASE_COUNT);
+  console.log('decrease')
+}
+
+export default function* rootSaga() {
+  yield watchClickSaga()
+}
+```
