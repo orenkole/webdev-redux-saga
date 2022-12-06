@@ -504,3 +504,10 @@ export default function* rootSaga() {
 ```
 ---
 Now, when we use try...catch we can use _fork_ instead of _spawn_, still our parent saga won't result in error. 
+
+## 9. React Router Integration
+
+Add _Components_ and _Pages_ folders.  
+
+`npm i --save react-router react-router-dom`  
+
