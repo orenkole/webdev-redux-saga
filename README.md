@@ -509,5 +509,115 @@ Now, when we use try...catch we can use _fork_ instead of _spawn_, still our par
 
 Add _Components_ and _Pages_ folders.  
 
-`npm i --save react-router react-router-dom`  
+` npm i --save react-router@5.2.1 react-router-dom@5.3.0`  
 
+Use routes  
+```js
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import {createBrowserHistory} from 'history';
+import './index.css';
+import App from './App';
+import reportWebVitals from './reportWebVitals';
+import {Provider} from "react-redux";
+import store from "./redux/store";
+import Home from "./pages/home/home";
+import LatestNews from "./pages/latest-news/latest-news";
+import PopularNews from "./pages/popular-news/popular-news";
+import { Route, Switch, Router } from 'react-router-dom';
+
+const history = createBrowserHistory();
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <Provider store={store}>
+    <Router history={history}>
+      <App>
+        <Switch>
+          <Route path="/" exact>
+            <Home />
+          </Route>
+          <Route path="/latest-news" exact>
+            <LatestNews />
+          </Route>
+          <Route path="/popular-news" exact>
+            <PopularNews />
+          </Route>
+        </Switch>
+      </App>
+    </Router>
+  </Provider>
+);
+
+// If you want to start measuring performance in your app, pass a function
+// to log results (for example: reportWebVitals(console.log))
+// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+reportWebVitals();
+```
+
+Fetch on page load  
+```js
+import { useSelector, useDispatch } from "react-redux";
+import News from "../../components/news/news";
+import {useEffect} from "react";
+import {GET_POPULAR_NEWS} from "../../redux/constants";
+
+const PopularNews = () => {
+  const { popularNews } = useSelector(store => store?.news || {});
+  const { popularNewsError } = useSelector(store => store?.errors || {});
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch({type: GET_POPULAR_NEWS});
+  }, [])
+
+  return(
+    <div>
+      <News news={popularNews} error={popularNewsError} title="Popular News" />
+    </div>
+  );
+};
+
+export default PopularNews;
+```
+
+Make 2 separate sagas to watch fetching of popular or latest news:  
+```js
+import {takeEvery, put, call, fork, all} from "redux-saga/effects";
+import {GET_LATEST_NEWS, GET_POPULAR_NEWS, SET_LATEST_NEWS_ERROR, SET_POPULAR_NEWS_ERROR} from "../constants";
+import {getLatestNews, getPopularNews} from "../../api";
+import {setLatestNews, setPopularNews} from "../actions/actionCreators";
+
+export function* handleLatestNews() {
+  try {
+    const {hits} = yield call(getLatestNews, 'react');
+    yield put(setLatestNews(hits))
+  } catch(e) {
+    yield put({type: SET_LATEST_NEWS_ERROR, payload: 'Error fetching latest news'})
+  }
+}
+
+export function* handlePopularNews() {
+  try {
+    const {hits} = yield call(getPopularNews());
+    yield put(setPopularNews(hits));
+  } catch (e) {
+    yield put({type: SET_POPULAR_NEWS_ERROR, payload: 'Error fetching popular news'})
+  }
+}
+
+export function* watchPopularSaga() {
+  yield takeEvery(GET_POPULAR_NEWS, handlePopularNews)
+}
+
+export function* watchLatestSaga() {
+  yield takeEvery(GET_LATEST_NEWS, handleLatestNews);
+}
+
+
+export default function* rootSaga() {
+  yield all([
+    fork(watchLatestSaga),
+    fork(watchLatestSaga),
+  ])
+}
+```
