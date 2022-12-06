@@ -1,4 +1,4 @@
-import {takeLatest, put, call, select} from "redux-saga/effects";
+import {takeLatest, put, call, select, fork, join} from "redux-saga/effects";
 import {SET_LATEST_NEWS_ERROR, SET_LOADING_DATA, SET_POPULAR_NEWS_ERROR} from "../constants";
 import {getLatestNews, getPopularNews} from "../../api";
 import {setLatestNews, setPopularNews} from "../actions/actionCreators";
@@ -34,6 +34,14 @@ export function* watchNewsSaga() {
   yield put({type: SET_LOADING_DATA, payload: false})
 }
 
+export function* loadTest() {
+  const {hits} = yield call(getPopularNews);
+  return hits;
+}
+
 export default function* rootSaga() {
   yield takeLatest(LOCATION_CHANGE, watchNewsSaga);
+  const news = yield fork(loadTest);
+  const result = yield join(news);
+  console.log(' --- RESULT --- ', result);
 }

@@ -808,3 +808,38 @@ export default function* rootSaga() {
   yield takeLatest(LOCATION_CHANGE, watchNewsSaga); // take latest in LOCATION_CHANGE
 }
 ```
+
+## 12. Useful Effects
+
+- _delay_ - pause execution  
+- _throttle_ - blocks saga execution if previous call is ot finished  
+- _debounce_ - restricts number of calls in some time period  
+- _retry_ - retry saga
+- _apply_ - like _call_ just args are inside array  
+- _cancel_ - cancel saga  
+- _join_ - wait until saga resolved  
+
+```js
+export function* loadTest() {
+  const {hits} = yield call(getPopularNews);
+  return hits;
+}
+
+export default function* rootSaga() {
+  yield takeLatest(LOCATION_CHANGE, watchNewsSaga);
+  const news = yield fork(loadTest);
+  console.log(' --- NEWS --- ', news);
+}
+```
+
+![img.png](images_notes/join.png)
+
+```js
+export default function* rootSaga() {
+  yield takeLatest(LOCATION_CHANGE, watchNewsSaga);
+  const news = yield fork(loadTest);
+  const result = yield join(news);
+  console.log(' --- RESULT --- ', result);
+}
+```
+![img.png](images_notes/join_2.png)
