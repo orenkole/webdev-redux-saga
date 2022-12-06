@@ -204,3 +204,48 @@ export default function* rootSaga() {
   yield watchClickSaga()
 }
 ```
+
+## 5. Эффекты и запрос данных (Effects & Data Fetching)
+_webdev-redux-saga/src/App.js_
+```js
+import {getLatestNews} from "./redux/actions/actionCreators";
+
+const handleNews = () => {
+  dispatch(getLatestNews());
+}
+
+<button onClick={handleNews}>Get news</button>
+```
+_webdev-redux-saga/src/redux/actions/actionCreators.js_
+```js
+export const getLatestNews = () => ({
+  type: GET_LATEST_NEWS
+})
+```
+_webdev-redux-saga/src/redux/sagas/index.js_
+```js
+import {takeEvery} from "redux-saga/effects";
+import {GET_LATEST_NEWS} from "../constants";
+import {getLatestNews} from "../../api";
+
+export function* workSaga() {
+  const data = yield getLatestNews();
+  console.log(' --- DATA --- ', data);
+  yield;
+}
+
+export function* watchClickSaga() {
+  yield takeEvery(GET_LATEST_NEWS, workSaga);
+}
+
+export default function* rootSaga() {
+  yield watchClickSaga()
+}
+```
+_webdev-redux-saga/src/api/index.js_
+```js
+export const getLatestNews = async () => {
+  const request = await fetch(`http://hn.algolia.com/api/v1/search?query=react`);
+  return await request.json();
+}
+```
