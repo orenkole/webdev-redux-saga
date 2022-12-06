@@ -8,6 +8,7 @@ function App() {
   const dispatch = useDispatch();
   const latestNews = useSelector(store => store?.news?.latestNews || []);
   const popularNews = useSelector(store => store?.news?.popularNews || []);
+  const {latestNewsError, popularNewsError} = useSelector(store => store?.errors || {});
 
   const handleClick = () => {
     dispatch(getNews());
@@ -16,8 +17,8 @@ function App() {
   return (
     <div>
       <button onClick={handleClick}>Get news</button>
-      <News news={latestNews} title="Latest news" />
-      <News news={popularNews} title="Popular news" />
+      <News news={latestNews} error={latestNewsError} title="Latest news" />
+      <News news={popularNews} error={popularNewsError} title="Popular news" />
     </div>
   );
 }

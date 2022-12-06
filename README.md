@@ -406,3 +406,101 @@ export default function* rootSaga() {
   yield watchClickSaga()
 }
 ```
+
+## 8. Errors Handling
+
+_fork_ - child saga error will cause error in parent saga  
+_spawn_ - child saga error will not affect parent saga error  
+
+---
+
+We want to display error into _store_  
+
+---
+_webdev-redux-saga/src/App.js_
+```js
+  const {latestNewsError, popularNewsError} = useSelector(store => store?.errors || {});
+  <News news={latestNews} error={latestNewsError} title="Latest news" />
+  <News news={popularNews} error={popularNewsError} title="Popular news" />
+```
+```js
+export const SET_LATEST_NEWS_ERROR = 'SET_LATEST_NEWS_ERROR';
+export const SET_POPULAR_NEWS_ERROR = 'SET_POPULAR_NEWS_ERROR';
+```
+```js
+import {SET_LATEST_NEWS_ERROR, SET_POPULAR_NEWS_ERROR} from "../constants";
+
+const initialState = {
+  latestNewsError: '',
+  popularNewsError: '',
+}
+
+export const errors = (state = initialState, {type, payload}) => {
+  switch (type) {
+    case SET_LATEST_NEWS_ERROR:
+      return {
+        ...state,
+        latestNewsError: payload
+      }
+    case SET_POPULAR_NEWS_ERROR:
+      return {
+        ...state,
+        popularNewsError: payload
+      }
+    default:
+      return state
+  }
+}
+```
+```js
+import {combineReducers} from "redux";
+import {news} from "./news";
+import {errors} from "./errors";
+
+const reducer = combineReducers({
+  news,
+  errors
+})
+
+export default reducer;
+```
+Use try...catch in sagas:
+```js
+import {takeEvery, put, call, fork, spawn} from "redux-saga/effects";
+import {GET_NEWS, SET_LATEST_NEWS_ERROR, SET_POPULAR_NEWS_ERROR} from "../constants";
+import {getLatestNews, getPopularNews} from "../../api";
+import {setLatestNews, setPopularNews} from "../actions/actionCreators";
+
+export function* handleLatestNews() {
+  try {
+    const {hits} = yield call(getLatestNews, 'react');
+    yield put(setLatestNews(hits))
+  } catch(e) {
+    yield put({type: SET_LATEST_NEWS_ERROR, payload: 'Error fetching latest news'})
+  }
+}
+
+export function* handlePopularNews() {
+  try { // use try catch
+    const {hits} = yield call(getPopularNews());
+    yield put(setPopularNews(hits));
+  } catch (e) {
+    yield put({type: SET_POPULAR_NEWS_ERROR, payload: 'Error fetching popular news'})
+  }
+}
+
+export function* handleNews() {
+  yield spawn(handleLatestNews);
+  yield spawn(handlePopularNews);
+}
+
+export function* watchClickSaga() {
+  yield takeEvery(GET_NEWS, handleNews);
+}
+
+export default function* rootSaga() {
+  yield watchClickSaga()
+}
+```
+---
+Now, when we use try...catch we can use _fork_ instead of _spawn_, still our parent saga won't result in error. 
