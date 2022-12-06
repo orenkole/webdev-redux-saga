@@ -249,3 +249,72 @@ export const getLatestNews = async () => {
   return await request.json();
 }
 ```
+## 6. Сохранение данных в стор (Saving Data Into Redux-Store)
+
+Declare action  
+```js
+export const SET_LATEST_NEWS = 'SET_LATEST_NEWS';
+```
+
+Action creator
+```js
+export const setLatestNews = (payload) => ({
+  type: SET_LATEST_NEWS,
+  payload
+})
+```
+
+reducer
+```js
+import {SET_LATEST_NEWS} from "../constants";
+
+const initialState = {
+  latestNews: []
+}
+
+export const news = (state = initialState, {type, payload}) => {
+  switch (type) {
+    case SET_LATEST_NEWS:
+      return {
+        ...state,
+        latestNews: [...state.latestNews, ...payload]
+      }
+    default:
+      return state
+  }
+}
+```
+```js
+import {combineReducers} from "redux";
+import {counter} from "./counter";
+import {news} from "./news";
+
+const reducer = combineReducers({
+  counter,
+  news
+})
+
+export default reducer;
+```
+
+saga: use _call_ to call function that returns promise, _put_ to put result to redux
+```js
+import {takeEvery, put, call} from "redux-saga/effects";
+import {GET_LATEST_NEWS} from "../constants";
+import {getLatestNews} from "../../api";
+import {setLatestNews} from "../actions/actionCreators";
+
+export function* handleLatestNews() {
+  const {hits} = yield call(getLatestNews, 'react');
+  yield put(setLatestNews(hits))
+  yield;
+}
+
+export function* watchClickSaga() {
+  yield takeEvery(GET_LATEST_NEWS, handleLatestNews);
+}
+
+export default function* rootSaga() {
+  yield watchClickSaga()
+}
+```
