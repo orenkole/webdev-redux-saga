@@ -318,3 +318,91 @@ export default function* rootSaga() {
   yield watchClickSaga()
 }
 ```
+
+## 7. Параллельные задачи (Parallel Tasks)
+
+_call_ - is a blocking operation  
+To fetch in parallel - use _fork_  
+
+---
+
+_all_, _race_ - analogs of Promise.all, Promise.race  
+
+```js
+export function* handleNews() {
+  yield fork(handleLatestNews);
+  yield fork(handlePopularNews);
+}
+```
+vs  
+```js
+export function* handleNews() {
+  yield all([
+    call(handleLatestNews);
+    call(handlePopularNews);
+  ])
+}
+```
+
+With _fork_ all requests are completely independent. With _all_ we'll get result when all requests are resolved.  If one of requests will fail, _all_ will return nothing.  
+
+_race_ - only will return 1 result. Is used to terminate background task that waits some action.  
+
+---
+
+```js
+import logo from './logo.svg';
+import './App.css';
+import {useDispatch, useSelector} from "react-redux";
+import {getNews} from "./redux/actions/actionCreators";
+import News from "./components/news/news";
+
+function App() {
+  const dispatch = useDispatch();
+  const latestNews = useSelector(store => store?.news?.latestNews || []);
+  const popularNews = useSelector(store => store?.news?.popularNews || []);
+
+  const handleClick = () => {
+    dispatch(getNews());
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>Get news</button>
+      <News news={latestNews} title="Latest news" />
+      <News news={popularNews} title="Popular news" />
+    </div>
+  );
+}
+
+export default App;
+```
+```js
+import {takeEvery, put, call, fork} from "redux-saga/effects";
+import {GET_NEWS} from "../constants";
+import {getLatestNews, getPopularNews} from "../../api";
+import {setLatestNews, setPopularNews} from "../actions/actionCreators";
+
+export function* handleLatestNews() {
+  const {hits} = yield call(getLatestNews, 'react');
+  yield put(setLatestNews(hits))
+}
+
+export function* handlePopularNews() {
+  const {hits} = yield call(getPopularNews());
+  yield put(setPopularNews(hits));
+}
+
+export function* handleNews() {
+  yield fork(handleLatestNews);
+  yield fork(handlePopularNews);
+}
+
+export function* watchClickSaga() {
+  yield takeEvery(GET_NEWS, handleNews);
+}
+
+export default function* rootSaga() {
+  yield watchClickSaga()
+}
+```
