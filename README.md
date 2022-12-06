@@ -726,3 +726,85 @@ export function* rootSaga8() {
   );
 }
 ```
+
+## 11. Connected-React-Router Integration
+
+What if we have to add saga to app with bunch of pages and we don't want to add useEffect to every page.  
+Instead, we'll listen to route change: use connected-react-router: save info about actual route in store and update it in store when we change url.  
+
+Now we'll have action _LOCATION_CHANGE_  
+
+--- 
+Setup:  
+```js
+import {combineReducers} from "redux";
+import {news} from "./news";
+import {errors} from "./errors";
+import {createBrowserHistory} from "history";
+import {connectRouter} from "connected-react-router";
+import {loader} from "./loader";
+
+export const history = createBrowserHistory();
+
+const reducer = combineReducers({
+  news,
+  errors,
+  loader,
+  router: connectRouter(history) // now we have route in store
+})
+
+export default reducer;
+```
+```js
+import {history} from "./redux/reducers";
+import {ConnectedRouter} from "connected-react-router";
+
+<Provider store={store}>
+  <ConnectedRouter history={history}> // use history
+    <App>
+      <Switch>
+        <Route path="/" exact>
+          <Home />
+        </Route>
+```
+```js
+import {takeLatest, put, call, select} from "redux-saga/effects";
+import {SET_LATEST_NEWS_ERROR, SET_LOADING_DATA, SET_POPULAR_NEWS_ERROR} from "../constants";
+import {getLatestNews, getPopularNews} from "../../api";
+import {setLatestNews, setPopularNews} from "../actions/actionCreators";
+import {LOCATION_CHANGE} from "connected-react-router";
+
+export function* handleLatestNews() {
+  try {
+    const {hits} = yield call(getLatestNews, 'react');
+    yield put(setLatestNews(hits))
+  } catch(e) {
+    yield put({type: SET_LATEST_NEWS_ERROR, payload: 'Error fetching latest news'})
+  }
+}
+
+export function* handlePopularNews() {
+  try {
+    const {hits} = yield call(getPopularNews());
+    yield put(setPopularNews(hits));
+  } catch (e) {
+    yield put({type: SET_POPULAR_NEWS_ERROR, payload: 'Error fetching popular news'})
+  }
+}
+
+export function* watchNewsSaga() {
+  yield put({type: SET_LOADING_DATA, payload: true})
+  const path = yield select(({router}) => router.location.pathname);
+  if (path === '/popular-news') {
+    yield call(handlePopularNews)
+  }
+  if (path === '/latest-news') {
+    yield call(handleLatestNews);
+  }
+  yield put({type: SET_LOADING_DATA, payload: false})
+}
+
+export default function* rootSaga() {
+  yield takeLatest(LOCATION_CHANGE, watchNewsSaga); // take latest in LOCATION_CHANGE
+}
+```
